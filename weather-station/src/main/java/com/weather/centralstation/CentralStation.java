@@ -16,6 +16,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.weather.centralstation.storage.BitCaskStore;
+import com.weather.WeatherMessage;
 import com.weather.centralstation.ParquetArchiver;
 
 import com.sun.net.httpserver.HttpServer;
@@ -37,6 +38,9 @@ public class CentralStation {
                 }
                 ParquetArchiver archiver = new ParquetArchiver("./parquet_archives");
                 System.out.println("Parquet Archiver initialized.");
+
+                ElasticIndexer elasticIndexer = new ElasticIndexer();
+                System.out.println("Elastic search initialized");
 
                 // start the HTTP API Server
                 try {
@@ -121,6 +125,10 @@ public class CentralStation {
 
                                         // to write to the parquet files
                                         archiver.bufferRecord(jsonValue);
+
+                                        // to index to elastic search
+                                        WeatherMessage msg =mapper.readValue(jsonValue, WeatherMessage.class);
+                                        elasticIndexer.indexWeather(msg, false);
 
                                 } catch (Exception e) {
                                         System.err.println("Error processing record: " + e.getMessage());

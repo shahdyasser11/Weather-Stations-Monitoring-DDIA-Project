@@ -304,3 +304,112 @@ java -lesaa
 ```bash
 java lesaa
 ```
+
+
+
+
+
+
+# ElasticSearch & Kibana Setup
+
+## Pull ElasticSearch Image
+
+```bash
+docker pull elasticsearch:8.13.4
+```
+
+---
+
+## Pull Kibana Image
+
+```bash
+docker pull kibana:8.13.4
+```
+
+---
+
+## Run ElasticSearch Container
+
+```bash
+docker run -d \
+  --name elasticsearch \
+  -p 9200:9200 \
+  -e "discovery.type=single-node" \
+  -e "xpack.security.enabled=false" \
+  elasticsearch:8.13.4
+```
+
+---
+
+## Run Kibana Container
+
+```bash
+docker run -d \
+  --name kibana \
+  -p 5601:5601 \
+  --link elasticsearch:elasticsearch \
+  -e ELASTICSEARCH_HOSTS=http://elasticsearch:9200 \
+  kibana:8.13.4
+```
+
+---
+
+## Access Kibana Dashboard
+
+Open browser:
+
+```text
+http://localhost:5601
+```
+
+
+---
+
+# Kibana Analytics
+
+Kibana dashboards visualize:
+- low battery counts
+- dropped messages
+- humidity trends
+- temperature trends
+- weather analytics
+el sowarrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
+---
+
+
+
+# Build Weather Station Image
+
+Inside `weather-station/`:
+
+```bash
+docker build -t weather-station .
+```
+
+---
+
+# Run Weather Station Container
+
+## Station 1
+
+```bash
+docker run --network host weather-station 1
+```
+
+---
+
+## Station 2
+
+```bash
+docker run --network host weather-station 2
+```
+
+---
+
+## Station 3
+
+```bash
+docker run --network host weather-station 3
+```
+
+---
