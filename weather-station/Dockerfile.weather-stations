@@ -1,0 +1,21 @@
+# build stage
+FROM maven:3.9-eclipse-temurin-17 AS build #Docker downloads image containing: Maven, Java compiler, JDK
+
+WORKDIR /app
+COPY pom.xml .
+COPY src ./src
+RUN mvn clean compile -DskipTests #compile java project
+
+RUN mvn dependency:copy-dependencies -DoutputDirectory=target/lib
+
+# runtime stage
+FROM eclipse-temurin:17-jre     #an image to make smaller container for runtime 
+
+WORKDIR /app
+
+COPY --from=build /app/target/classes ./classes     #Copies compiled .class files FROM build container to runtime container.
+COPY --from=build /app/target/lib ./lib             #Copies dependency jars into runtime container
+
+ENV CLASSPATH="classes:lib/*"                       #without This Java cannot find Kafka classes, Jackson classes, java classes
+
+ENTRYPOINT ["java", "-cp", "classes:lib/*", "com.weather.stations.WeatherStation"]      #runs container automatically when started.
