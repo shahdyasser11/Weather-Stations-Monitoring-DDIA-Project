@@ -1,0 +1,63 @@
+---
+# The Shared Storage Request (PersistentVolumeClaim)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: central-station-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi # Requesting 2GB to safely hold BitCask logs and Parquet batches
+
+---
+# The Application Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: central-station-deployment
+spec:
+  replicas: 1 # We only need 1 instance of the central station
+  selector:
+    matchLabels:
+      app: central-station
+  template:
+    metadata:
+      labels:
+        app: central-station
+    spec:
+      containers:
+        - name: central-station
+          image: central-station-image:latest
+          imagePullPolicy: Never 
+          ports:
+          - containerPort: 8080
+          volumeMounts:
+          # Mount the same PVC to both folders using subPaths
+          - name: shared-storage
+            mountPath: /app/bitcask_data
+            subPath: bitcask
+          - name: shared-storage
+            mountPath: /app/parquet_archives
+            subPath: parquet
+      volumes:
+      - name: shared-storage
+        persistentVolumeClaim:
+          claimName: central-station-pvc
+
+---
+# 3. The Network Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: central-station-service
+spec:
+  type: NodePort # Allows external access from your local terminal
+  selector:
+    app: central-station
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+      nodePort: 30080 # Your Bash script will now talk to localhost:30080

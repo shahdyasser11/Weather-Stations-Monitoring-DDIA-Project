@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # our centeral station is listening on port 8080
-SERVER_URL="http://localhost:8080"
+SERVER_URL="http://192.168.49.2:30080"
+
 
 
 #  to view All Data (-view-all)
