@@ -477,3 +477,46 @@ docker run --network host weather-station 3
 ```
 
 ---
+
+# Kubernetes deployment
+- created 3 yaml files
+- infrastructure.yaml -> to create the deployment for the kafka broker server
+- central-station.yaml -> to create the presistent volume to hold the bitcask and parquet files, create the deployment of the app and create the network service to allow bitcask_client script to access the deployment from outside the cluster
+- weather-station.yaml -> to run the 10 weather stations
+
+## commands used:
+
+```sh
+minikube image load central-station-image:latest
+minikube image load weather-station-image:latest
+```
+**to load the images into minikube**
+
+
+```sh
+kubectl apply -f infrastructure.yaml
+kubectl apply -f centra-station-deployment.yaml
+kubectl apply -f weather-stations-deployment.yaml
+```
+
+```sh
+kubectl get pods
+```
+**to make sure our deployments are running**
+
+```sh
+kubectl exec deploy/central-station-deployment -- ls -lh /app/bitcask_data
+kubectl exec deploy/central-station-deployment -- ls -lh /app/parquet_archives
+```
+**to make sure the bitcask and parquet files are created inside the volume**
+
+```sh
+kubectl logs -l app=weather-station-1 -f
+kubectl logs -l app=central-station -f
+```
+**getting the logs of a specific deployment and quering it using its label**
+
+```sh
+ kubectl port-forward service/central-station-service 8888:8080
+ ```
+ **to forward the port for the bash script**
