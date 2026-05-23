@@ -286,24 +286,24 @@ RAIN ALERT -> Station 1 humidity = 82
 
 ```bash
 cd weather-station
-mvn clean package
+mvn clean package dependency:copy-dependencies
 ```
 
 ---
-
-# Run Weather Station
+# build Central Station
 
 ```bash
-java -lesaa
+docker build -f Dockerfile.central-station -t central-station .
 ```
+
+
+# build Weather Station
+
+```bash
+docker build -f Dockerfile.weather-stations -t weather-station .```
 
 ---
 
-# Run Central Station
-
-```bash
-java lesaa
-```
 
 
 
@@ -780,3 +780,167 @@ The majority of allocations originated from:
 ---
 
 
+# Open-Meteo API Integration - bonus part1
+
+## Overview
+
+In addition to simulated weather stations, the system integrates with the external weather API:
+
+```text
+https://open-meteo.com/
+```
+
+The Open-Meteo API provides:
+- real weather data
+- humidity
+- temperature
+- wind speed
+
+The API data is collected and forwarded into Kafka using a Channel Adapter.
+
+---
+
+
+# Open-Meteo Workflow
+
+```text
+Open-Meteo API
+        ↓
+WeatherAPIAdapter
+        ↓
+Kafka Producer API
+        ↓
+weather-status topic
+        ↓
+CentralStation
+```
+
+---
+
+# Open-Meteo API URL
+
+```text
+https://api.open-meteo.com/v1/forecast?latitude=31.2001&longitude=29.9187&current=temperature_2m,relative_humidity_2m,wind_speed_10m
+```
+
+---
+
+# API Parameters
+
+| Parameter | Description |
+|---|---|
+| latitude | city latitude |
+| longitude | city longitude |
+| temperature_2m | current temperature |
+| relative_humidity_2m | current humidity |
+| wind_speed_10m | current wind speed |
+
+---
+
+# Example API Response
+
+```json
+{
+  "current": {
+    "temperature_2m": 26.5,
+    "relative_humidity_2m": 74,
+    "wind_speed_10m": 11.2
+  }
+}
+```
+
+---
+
+# WeatherAPIAdapter Responsibilities
+
+The adapter:
+1. sends HTTP request to Open-Meteo
+2. receives weather JSON response
+3. converts response into WeatherMessage object
+4. serializes WeatherMessage into JSON
+5. publishes JSON into Kafka topic
+
+---
+
+# Maven Dependency
+
+Add HTTP client dependency:
+
+```xml
+<dependency>
+    <groupId>org.apache.httpcomponents.client5</groupId>
+    <artifactId>httpclient5-fluent</artifactId>
+    <version>5.3.1</version>
+</dependency>
+```
+
+---
+
+# WeatherAPIAdapter Location
+
+```text
+weather-station/src/main/java/com/weather/stations/WeatherAPIAdapter.java
+```
+
+---
+
+# Open-Meteo Station ID
+
+The adapter uses:
+
+```java
+msg.station_id = 111;
+```
+
+to identify records originating from the external API.
+
+This separates:
+- simulated stations
+from:
+- external API data
+
+---
+
+# Example Kafka Message Produced
+
+```json
+{
+  "station_id": 111,
+  "s_no": 15,
+  "battery_status": "external-api",
+  "status_timestamp": 1716332211,
+  "dropped": false,
+  "weather": {
+    "humidity": 74,
+    "temperature": 26,
+    "wind_speed": 11
+  }
+}
+```
+
+---
+
+# Run WeatherAPIAdapter
+
+```bash
+mvn exec:java -Dexec.mainClass="com.weather.stations.WeatherAPIAdapter"
+```
+
+---
+
+# Verify Kafka Receives Messages
+
+Enter Kafka container:
+
+```bash
+docker exec --workdir /opt/kafka/bin/ -it broker sh
+```
+
+Run consumer:
+
+```bash
+./kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic weather-status --from-beginning
+```
+
+![Bonus](imgs/bonus.png)
+![Bonus](imgs/bonus-kafka.png)
