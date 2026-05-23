@@ -204,7 +204,7 @@ rain-alert topic
 
 ---
 
-# Project File Structure
+# Initial Project File Structure
 
 ```text
 Weather-Stations-Monitoring-DDIA-Project/
@@ -520,3 +520,263 @@ kubectl logs -l app=central-station -f
  kubectl port-forward service/central-station-service 8888:8080
  ```
  **to forward the port for the bash script**
+
+# Java Flight Recorder (JFR) Profiling
+
+Since the Central Station is the core component of the data-intensive weather monitoring system, Java Flight Recorder (JFR) was used to analyze:
+
+- memory consumption
+- garbage collection behavior
+- GC pauses
+- file I/O operations
+- runtime overhead
+
+---
+
+# Running Central Station with JFR
+
+The Central Station was executed with Java Flight Recorder enabled for a duration of 1 minute using the following command:
+
+```bash
+java \
+-XX:StartFlightRecording=duration=1m,filename=centralstation.jfr,settings=profile \
+-cp "target/classes:target/dependency/*" \
+com.weather.centralstation.CentralStation
+```
+
+---
+
+# JFR Configuration Parameters
+
+| Parameter | Description |
+|---|---|
+| `duration=1m` | Records profiling data for 1 minute |
+| `filename=centralstation.jfr` | Saves profiling data into a `.jfr` file |
+| `settings=profile` | Enables profiling-oriented monitoring settings |
+| `-cp` | Specifies the application classpath |
+| `com.weather.centralstation.CentralStation` | Starts the Central Station application |
+
+---
+
+# Workload Generation
+
+During profiling, multiple Weather Station containers were executed simultaneously to generate realistic workload traffic:
+
+```bash
+docker run --network host weather-station 1
+```
+
+```bash
+docker run --network host weather-station 2
+```
+
+```bash
+docker run --network host weather-station 3
+```
+
+The workload generated:
+- Kafka message streaming
+- BitCask writes
+- Parquet archival operations
+- ElasticSearch indexing requests
+
+---
+
+# JFR Analysis Commands and Profiling Results
+
+After recording completion, the generated `.jfr` file was analyzed using the built-in JFR command-line tools.
+
+---
+
+## Recording Duration
+
+| Metric | Value |
+|---|---|
+| Recording Duration | 60 seconds |
+
+---
+
+## JFR Summary
+
+```bash
+jfr summary centralstation.jfr
+```
+
+This command provides:
+- total recording duration
+- number of recorded events
+- allocation statistics
+- garbage collection statistics
+- I/O activity overview
+
+![Some events](imgs/events-examples.png)
+
+---
+
+
+## Garbage Collection Analysis
+
+```bash
+jfr print --events jdk.GarbageCollection centralstation.jfr
+```
+
+This command was used to analyze:
+- GC pause count
+- GC duration
+- maximum pause duration
+- G1New and G1Old collection events
+
+![Garbage Collection](imgs/GC.png)
+
+# Garbage Collection Statistics
+
+| Metric | Value |
+|---|---|
+| GC Pause Count | 7 |
+| Maximum GC Event Duration | 85.0 ms |
+| Maximum Stop-The-World Pause | 51.8 ms |
+
+![Garbage Collection](imgs/topGC.png)
+
+# GC Event Analysis
+
+The JVM used the **G1 Garbage Collector**, which generated two main collection types:
+
+| GC Type | Description |
+|---|---|
+| `G1New` | Cleans short-lived temporary objects |
+| `G1Old` | Cleans long-lived objects and performs deeper memory cleanup |
+
+Observed GC events:
+
+| GC ID | Type | Duration |
+|---|---|---|
+| 2 | G1New | 6.69 ms |
+| 3 | G1New | 12.8 ms |
+| 4 | G1Old | 29.0 ms |
+| 5 | G1New | 30.3 ms |
+| 6 | G1New | 10.2 ms |
+| 7 | G1Old | 85.0 ms |
+| 8 | G1New | 51.8 ms |
+
+---
+
+# GC Pause Observations
+
+JFR reports multiple timing metrics for garbage collection events:
+
+| Metric | Meaning |
+|---|---|
+| `duration` | Total GC event runtime |
+| `sumOfPauses` | Total application pause time |
+| `longestPause` | Longest single stop-the-world pause |
+
+In several events:
+
+```text
+sumOfPauses = longestPause
+```
+
+This indicates that only one application pause occurred during the collection cycle.
+
+For the largest `G1Old` event:
+
+```text
+duration = 85.0 ms
+sumOfPauses = 4.39 ms
+longestPause = 4.00 ms
+```
+
+This means:
+- the overall GC operation lasted 85 ms
+- however, the application itself paused for only about 4 ms
+- most cleanup work was performed concurrently in the background
+
+This demonstrates efficient behavior of the G1 Garbage Collector.
+
+The maximum observed stop-the-world pause was:
+
+```text
+51.8 ms
+```
+
+which indicates acceptable runtime overhead for the workload.
+![Garbage Collection 1](imgs/GC1.png)
+![Garbage Collection 2](imgs/GC2.png)
+
+
+---
+
+## I/O Operations Analysis
+
+```bash
+jfr print --events jdk.FileWrite,jdk.FileRead,jdk.SocketWrite,jdk.SocketRead centralstation.jfr
+```
+
+This command displays:
+- file read operations
+- file write operations
+- Kafka socket communication
+- ElasticSearch network activity
+
+![IO operations](imgs/FileRead.png)
+
+# I/O Operations Analysis
+
+The profiling session recorded several I/O activities including:
+
+- file read operations
+- JAR dependency loading
+- Kafka socket communication
+- ElasticSearch HTTP communication
+- Parquet archive access
+
+Example recorded operation:
+
+```text
+jdk.FileRead
+parquet-hadoop-1.13.1.jar
+```
+
+This confirms active filesystem interaction during runtime.
+
+![I/O Operations](imgs/topGC.png)
+
+---
+
+## Memory Allocation Analysis
+
+```bash
+jfr print --events jdk.ObjectAllocationSample centralstation.jfr
+```
+
+This command identifies:
+- top allocated classes
+- memory-heavy objects
+
+
+# Top Memory Consuming Class
+
+The following classes consumed the highest memory allocations during execution:
+
+| Class | Approximate Memory Usage |
+|---|---|
+| `java.util.concurrent.ConcurrentHashMap$Node[]` | 25.8 MB |
+
+![Top Memory Consuming](imgs/topMemoryConsumption.png)
+
+---
+
+# Memory Allocation Observations
+
+The majority of allocations originated from:
+
+- Kafka client internals
+- JVM class loading
+- string manipulation
+- JAR decompression/loading
+- network buffering
+
+---
+
+
