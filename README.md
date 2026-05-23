@@ -298,7 +298,7 @@ docker build -f Dockerfile.central-station -t central-station .
 ```
 
 
-# Run Weather Station
+# build Weather Station
 
 ```bash
 docker build -f Dockerfile.weather-stations -t weather-station .
