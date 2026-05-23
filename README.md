@@ -286,27 +286,23 @@ RAIN ALERT -> Station 1 humidity = 82
 
 ```bash
 cd weather-station
-mvn clean package
-```
+mvn clean package dependency:copy-dependencies ```
 
 ---
 
-# Run Weather Station
 
-```bash
-java -lesaa
-```
-
----
 
 # Run Central Station
 
 ```bash
-java lesaa
-```
+docker build -f Dockerfile.central -t central-station .```
 
 
+# Run Weather Station
 
+```bash
+docker build -f Dockerfile.station -t weather-station 1
+---
 
 
 
