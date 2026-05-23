@@ -320,14 +320,6 @@ docker pull elasticsearch:8.13.4
 
 ---
 
-## Pull Kibana Image
-
-```bash
-docker pull kibana:8.13.4
-```
-
----
-
 ## Run ElasticSearch Container
 
 ```bash
@@ -335,8 +327,35 @@ docker run -d \
   --name elasticsearch \
   -p 9200:9200 \
   -e "discovery.type=single-node" \
+  -e ES_JAVA_OPTS="-Xms512m -Xmx512m" \
   -e "xpack.security.enabled=false" \
   elasticsearch:8.13.4
+```
+
+The following JVM configuration reduces memory consumption for Virtual Machines:
+
+```text
+ES_JAVA_OPTS="-Xms512m -Xmx512m"
+```
+
+---
+
+## Verify ElasticSearch
+
+Open browser:
+
+```text
+http://localhost:9200
+```
+
+A JSON response confirms that ElasticSearch is running correctly.
+
+---
+
+## Pull Kibana Image
+
+```bash
+docker pull kibana:8.13.4
 ```
 
 ---
@@ -362,33 +381,78 @@ Open browser:
 http://localhost:5601
 ```
 
-
 ---
 
 # Kibana Analytics
 
-Kibana dashboards visualize:
-- low battery counts
-- dropped messages
+The Kibana dashboards visualize:
+
 - humidity trends
 - temperature trends
-- weather analytics
-el sowarrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
+- wind speed analytics
+- low / medium / high battery status statistics
+- dropped message statistics
+- station activity monitoring
+
 ---
 
+## Battery Status Statistics Dashboard
 
+The following dashboard visualizes the distribution of:
+
+- low battery
+- medium battery
+- high battery
+
+using Kibana vertical chart analytics.
+
+![Battery Dashboard](imgs/status.png)
+
+---
+
+## Dropped Messages Dashboard
+
+The following dashboard visualizes:
+
+- dropped messages
+- successfully delivered messages
+
+to monitor communication reliability between weather stations and the central station.
+
+![dropped messages](imgs/dropped.png)
+
+
+---
 
 # Build Weather Station Image
 
 Inside `weather-station/`:
 
 ```bash
-docker build -t weather-station .
+docker build -f Dockerfile.weather-stations -t weather-station .
 ```
 
 ---
 
-# Run Weather Station Container
+# Build Central Station Image
+
+Inside `weather-station/`:
+
+```bash
+docker build -f Dockerfile.central-stations -t central-station .
+```
+
+---
+
+# Run Central Station Container
+
+```bash
+docker run --network host --name central central-station
+```
+
+---
+
+# Run Weather Station Containers
 
 ## Station 1
 

@@ -59,18 +59,18 @@ public class WeatherStation {
 
             // 10% dropped messages
             if(random.nextInt(100) < 10){
-
-                System.out.println("Message Dropped");
-
+                msg.dropped = true;
             } else {
-
-                String jsonMsg = mapper.writeValueAsString(msg); //transforms Java object into JSON string
-
-                ProducerRecord<String,String> record = new ProducerRecord<>("weather-status",jsonMsg); //produces kafka record (takes the msg to a certain topic)
-                producer.send(record); //transmits message to Kafka broker
-
-                System.out.println("Sent: " + jsonMsg);
+                msg.dropped = false;
             }
+ 
+            String jsonMsg = mapper.writeValueAsString(msg); //transforms Java object into JSON string
+
+            ProducerRecord<String,String> record = new ProducerRecord<>("weather-status",jsonMsg); //produces kafka record (takes the msg to a certain topic)
+            producer.send(record); //transmits message to Kafka broker
+
+            System.out.println("Sent: " + jsonMsg);
+        
 
             Thread.sleep(1000);
         }

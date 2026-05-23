@@ -6,7 +6,7 @@ public class WeatherMessage {
     public long s_no;
     public String battery_status;
     public long status_timestamp;
-
     public Weather weather;
+    public boolean dropped;
 
 }

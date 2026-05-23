@@ -1,7 +1,14 @@
 package com.weather.centralstation;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
@@ -11,10 +18,8 @@ import org.apache.parquet.avro.AvroParquetWriter;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 
-import java.io.File;
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class ParquetArchiver {
     private final int BATCH_SIZE = 100;
@@ -33,13 +38,14 @@ public class ParquetArchiver {
                 + "\"type\": \"record\","
                 + "\"name\": \"WeatherRecord\","
                 + "\"fields\": ["
-                + "  {\"name\": \"station_id\", \"type\": \"string\"},"
+                + "  {\"name\": \"station_id\", \"type\": \"long\"},"
                 + "  {\"name\": \"s_no\", \"type\": \"long\"},"
                 + "  {\"name\": \"battery_status\", \"type\": \"string\"},"
                 + "  {\"name\": \"status_timestamp\", \"type\": \"long\"},"
                 + "  {\"name\": \"humidity\", \"type\": \"int\"},"
                 + "  {\"name\": \"temperature\", \"type\": \"int\"},"
-                + "  {\"name\": \"wind_speed\", \"type\": \"int\"}"
+                + "  {\"name\": \"wind_speed\", \"type\": \"int\"},"
+                + "  {\"name\": \"dropped\", \"type\": \"boolean\"}"
                 + "]"
                 + "}";
         this.avroSchema = new Schema.Parser().parse(schemaString);
@@ -77,7 +83,7 @@ public class ParquetArchiver {
         String currentDate = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
 
         for (Map.Entry<String, List<JsonNode>> entry : partitionedData.entrySet()) {
-            String stationId = entry.getKey();
+            long stationId = Long.parseLong(entry.getKey());
             List<JsonNode> stationRecords = entry.getValue();
 
             // Create partition directories: archiveDir/date/station_id/
@@ -102,16 +108,37 @@ public class ParquetArchiver {
                     record.put("humidity", node.get("weather").get("humidity").asInt());
                     record.put("temperature", node.get("weather").get("temperature").asInt());
                     record.put("wind_speed", node.get("weather").get("wind_speed").asInt());
+                    record.put("dropped", node.get("dropped").asBoolean());
+
 
                     writer.write(record);
                 }
             } catch (IOException e) {
                 System.err.println("Failed to write Parquet file: " + e.getMessage());
             }
+            // import parquet file into elasticsearch
+            try {
+
+                ParquetToElasticImporter importer =
+                        new ParquetToElasticImporter();
+
+                importer.importParquet(filePath);
+
+            } catch (Exception e) {
+
+                System.err.println(
+                        "Failed to import parquet into elasticsearch: "
+                        + e.getMessage()
+                );
+            }
         }
+
+
 
         // Clear the buffer for the next 10,000 records
         recordBuffer.clear();
         System.out.println("[ParquetArchiver] Flush complete.");
     }
+
+    
 }

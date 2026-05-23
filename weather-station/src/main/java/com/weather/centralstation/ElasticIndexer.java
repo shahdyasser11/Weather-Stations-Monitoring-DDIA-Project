@@ -1,18 +1,17 @@
 package com.weather.centralstation;
 
-import com.weather.WeatherMessage;
-
-import co.elastic.clients.elasticsearch.ElasticsearchClient;
-import co.elastic.clients.elasticsearch.core.IndexResponse;
-
-import co.elastic.clients.json.jackson.JacksonJsonpMapper;
-import co.elastic.clients.transport.rest_client.RestClientTransport;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.http.HttpHost;
 import org.elasticsearch.client.RestClient;
 
-import java.util.HashMap;
-import java.util.Map;
+import com.weather.WeatherMessage;
+
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch.core.IndexResponse;
+import co.elastic.clients.json.jackson.JacksonJsonpMapper;
+import co.elastic.clients.transport.rest_client.RestClientTransport;
 
 public class ElasticIndexer {
 
@@ -57,4 +56,14 @@ public class ElasticIndexer {
         // Print indexed document ID
         System.out.println("Indexed document: " + response.id());
     }
+
+    public void indexDocument(
+        Map<String,Object> document
+        ) throws Exception {
+
+            client.index(i -> i
+                    .index("weather-history")
+                    .document(document)
+            );
+        }
 }
