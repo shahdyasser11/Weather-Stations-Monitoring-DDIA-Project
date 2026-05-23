@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: weather-station
-        image: weather-station-image:v2
+        image: weather-station-image:v4
         imagePullPolicy: IfNotPresent
         command: ["java", "-cp", "/app/classes:/app/dependency/*", "com.weather.stations.WeatherStation", "1"]
 
@@ -38,7 +38,7 @@ spec:
     spec:
       containers:
       - name: weather-station
-        image: weather-station-image:v2
+        image: weather-station-image:v4
         imagePullPolicy: IfNotPresent
         command: ["java", "-cp", "/app/classes:/app/dependency/*", "com.weather.stations.WeatherStation", "2"]
 
@@ -60,7 +60,7 @@ spec:
     spec:
       containers:
       - name: weather-station
-        image: weather-station-image:v2
+        image: weather-station-image:v4
         imagePullPolicy: IfNotPresent
         command: ["java", "-cp", "/app/classes:/app/dependency/*", "com.weather.stations.WeatherStation", "3"]
 
@@ -82,7 +82,7 @@ spec:
     spec:
       containers:
       - name: weather-station
-        image: weather-station-image:v2
+        image: weather-station-image:v4
         imagePullPolicy: IfNotPresent
         command: ["java", "-cp", "/app/classes:/app/dependency/*", "com.weather.stations.WeatherStation", "4"]
 
@@ -104,7 +104,7 @@ spec:
     spec:
       containers:
       - name: weather-station
-        image: weather-station-image:v2
+        image: weather-station-image:v4
         imagePullPolicy: IfNotPresent
         command: ["java", "-cp", "/app/classes:/app/dependency/*", "com.weather.stations.WeatherStation", "5"]
 
@@ -126,7 +126,7 @@ spec:
     spec:
       containers:
       - name: weather-station
-        image: weather-station-image:v2
+        image: weather-station-image:v4
         imagePullPolicy: IfNotPresent
         command: ["java", "-cp", "/app/classes:/app/dependency/*", "com.weather.stations.WeatherStation", "6"]
 
@@ -148,7 +148,7 @@ spec:
     spec:
       containers:
       - name: weather-station
-        image: weather-station-image:v2
+        image: weather-station-image:v4
         imagePullPolicy: IfNotPresent
         command: ["java", "-cp", "/app/classes:/app/dependency/*", "com.weather.stations.WeatherStation", "7"]
 
@@ -170,7 +170,7 @@ spec:
     spec:
       containers:
       - name: weather-station
-        image: weather-station-image:v2
+        image: weather-station-image:v4
         imagePullPolicy: IfNotPresent
         command: ["java", "-cp", "/app/classes:/app/dependency/*", "com.weather.stations.WeatherStation", "8"]
 
@@ -192,7 +192,7 @@ spec:
     spec:
       containers:
       - name: weather-station
-        image: weather-station-image:v2
+        image: weather-station-image:v4
         imagePullPolicy: IfNotPresent
         command: ["java", "-cp", "/app/classes:/app/dependency/*", "com.weather.stations.WeatherStation", "9"]
 
@@ -214,6 +214,6 @@ spec:
     spec:
       containers:
       - name: weather-station
-        image: weather-station-image:v2
+        image: weather-station-image:v4
         imagePullPolicy: IfNotPresent
         command: ["java", "-cp", "/app/classes:/app/dependency/*", "com.weather.stations.WeatherStation", "10"]

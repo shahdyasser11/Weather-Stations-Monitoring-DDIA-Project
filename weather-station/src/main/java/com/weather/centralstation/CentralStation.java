@@ -36,12 +36,12 @@ public class CentralStation {
                 ParquetArchiver archiver = new ParquetArchiver("./parquet_archives");
                 System.out.println("Parquet Archiver initialized.");
 
-                //ElasticIndexer elasticIndexer = new ElasticIndexer();
-                //System.out.println("Elastic search initialized");
+                // ElasticIndexer elasticIndexer = new ElasticIndexer();
+                // System.out.println("Elastic search initialized");
 
                 // start the HTTP API Server
                 try {
-                        HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
+                        HttpServer server = HttpServer.create(new InetSocketAddress("0.0.0.0", 8080), 0);
 
                         // Endpoint for -view-key
                         final BitCaskStore finalStore = store;
@@ -93,7 +93,7 @@ public class CentralStation {
                 // Kafka Consumer Setup
                 ObjectMapper mapper = new ObjectMapper();
                 Properties props = new Properties();
-                props.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+                props.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "kafka-service:9092");
                 props.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
                                 "org.apache.kafka.common.serialization.StringDeserializer");
                 props.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
@@ -119,11 +119,10 @@ public class CentralStation {
 
                                         // to write to the bitcask file
                                         store.put(stationId, jsonValue);
+                                        System.out.println("wrote the record to bitcask file");
 
                                         // to write to the parquet files
                                         archiver.bufferRecord(jsonValue);
-
-
 
                                 } catch (Exception e) {
                                         System.err.println("Error processing record: " + e.getMessage());

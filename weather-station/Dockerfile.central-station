@@ -1,27 +1,16 @@
-# Stage 1: Build the Application
-FROM maven:3.9-eclipse-temurin-17 AS builder
-WORKDIR /app
 
-# Copy the pom.xml and source code into the container
-COPY pom.xml .
-COPY src ./src
-
-# Compile the code and copy all dependencies into a specific folder
-RUN mvn clean package dependency:copy-dependencies -DskipTests
-
-#  Run the Central Station
 FROM eclipse-temurin:17-jre
 WORKDIR /app
 
-# Copy only the compiled classes and dependencies from the builder stage
-COPY --from=builder /app/target/classes ./classes
-COPY --from=builder /app/target/dependency ./dependency
+# Copy the pre-compiled files 
+COPY target/classes /app/classes
+COPY target/dependency /app/dependency
 
-# Expose port 8080 so the bitcask client can talk to the container
+
 EXPOSE 8080
 
-# Create the internal directories for the storage engines
+# Pre-create the volume folders to prevent Kubernetes "Permission Denied" errors
 RUN mkdir -p /app/bitcask_data /app/parquet_archives
 
-# Start the Central Station application
-ENTRYPOINT ["java", "-cp", "classes:dependency/*", "com.weather.centralstation.CentralStation"]
+# Execute the Central Station
+ENTRYPOINT ["java", "-cp", "/app/classes:/app/dependency/*", "com.weather.centralstation.CentralStation"]

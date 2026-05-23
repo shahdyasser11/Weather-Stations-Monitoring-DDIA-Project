@@ -1,5 +1,5 @@
 ---
-# The Shared Storage Request (PersistentVolumeClaim)
+# The Shared Storage (PersistentVolumeClaim)
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -12,11 +12,11 @@ spec:
       storage: 2Gi # Requesting 2GB to safely hold BitCask logs and Parquet batches
 
 ---
-# The Application Deployment
+# the Application Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: central-station-deployment
+  name: central-station-deployment  # the name of the deployment
 spec:
   replicas: 1 # We only need 1 instance of the central station
   selector:
@@ -25,12 +25,12 @@ spec:
   template:
     metadata:
       labels:
-        app: central-station
-    spec:
+        app: central-station   
+    spec:       
       containers:
         - name: central-station
-          image: central-station-image:latest
-          imagePullPolicy: Never 
+          image: central-station-image:v6
+          imagePullPolicy: IfNotPresent 
           ports:
           - containerPort: 8080
           volumeMounts:
@@ -47,7 +47,7 @@ spec:
           claimName: central-station-pvc
 
 ---
-# 3. The Network Service
+# the network Service
 apiVersion: v1
 kind: Service
 metadata:
